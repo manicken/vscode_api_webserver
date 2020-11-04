@@ -2,17 +2,24 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
+
+import * as express from 'express';
+import * as http from 'http';
+import * as WebSocket from 'ws';
+
 var webServer:Server;
 var wsServer:Server;
-
-const port = 8080;
+const SettingFileName = "webServerApiSettings.json";
+var webServerPort = 8080;
+var webSocketPort = 3000;
+var FilesDirectory = "DesignTool";
 var url = require('url');
 var fs = require('fs');
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
+	loadSettings();
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "api-webserver" is now active!');
@@ -20,8 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
 	startServer();
 	StartWebSocketServer();
 	
-	//vscode.window.onDidChangeActiveTerminal((e) => {console.log(e.)})
-
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
@@ -35,12 +40,39 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 }
+export function loadSettings()
+{
+	const folders = vscode.workspace.workspaceFolders
+	if (folders == undefined) return "";
+	var wsPath = folders[0].uri.fsPath; // gets the path of the first workspace folder
+	wsPath += "/" + SettingFileName;
+	if (!fs.existsSync(wsPath)){
+		var cfg = {
+			webServerPort:webServerPort, 
+			webSocketPort:webSocketPort,
+			FilesDirectory:FilesDirectory
+		};
+		fs.writeFile(wsPath, JSON.stringify(cfg, null, 4), {flag:'wx'}, function(err:String) {
+			if (err) return console.log(err);
+			console.log('saved standard config file: ' + wsPath);
+		});
+		return;
+	}
+	try { 
+		var contents = fs.readFileSync(wsPath, {flag:'r'});
+		var cfgIn = JSON.parse(contents);
+		webServerPort = cfgIn.webServerPort;
+		webSocketPort = cfgIn.webSocketPort;
+		FilesDirectory = cfgIn.FilesDirectory;
+	}
+	catch (err)	{console.error(err);}
+}
 export function startServer()
 {
 	//create a server object:
 	webServer = createServer(serverReq);
 	
-	webServer.listen(8080); //the server object listens on port 8080
+	webServer.listen(webServerPort); //the server object listens on port 8080
 }
 export function serverReq(req:IncomingMessage, res:ServerResponse)
 {
@@ -57,7 +89,7 @@ export function serverReq_GET(req:IncomingMessage, res:ServerResponse)
 	res.writeHead(200, {'Content-Type': 'text/html'});
 	if (q.cmd == "getFile")
 	{
-		var fileName:String = q.param;
+		var fileName:String = q.fileName;
 		if (fileName == undefined || fileName == "")
 		{
 			res.write('getFile missing param="filename"');
@@ -74,7 +106,7 @@ export function serverReq_GET(req:IncomingMessage, res:ServerResponse)
 		//fileName = fileName.replace("..\\", ""); 
 		//fileName = fileName.replace("../", ""); // prevent directory traversal 
 		console.log("getFile cmd:" + q.param)
-		var path = GetDesignToolFolder();
+		var path = GetFilesFolder();
 		if (path.length != 0) {
 			path += '/' + fileName;
 			try {
@@ -105,6 +137,12 @@ export function serverReq_GET(req:IncomingMessage, res:ServerResponse)
 		res.end();
 		return;
 	}
+	else if (q.cmd == "ping")
+	{
+		res.write('OK');
+		res.end();
+		return;
+	}
 	res.write('unknown command' + req.url); //write a response to the client
 	res.end(); //end the response
 }
@@ -122,7 +160,7 @@ export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
 		var jsonObj= JSON.parse(jsonString);
 		vscode.window.showInformationMessage('API webserver - set files');
 		
-		var wsPath = GetDesignToolFolder();
+		var wsPath = GetFilesFolder();
 		if (wsPath.length == 0) return;
 		RemoveAllFilesInFolder(jsonObj.files, wsPath);
 		for (var i = 0; i < jsonObj.files.length; i++)
@@ -131,12 +169,12 @@ export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
 		}
 	})
 }
-export function GetDesignToolFolder():String
+export function GetFilesFolder():String
 {
 	const folders = vscode.workspace.workspaceFolders
 	if (folders == undefined) return "";
 	var wsPath = folders[0].uri.fsPath; // gets the path of the first workspace folder
-	wsPath += '/src/DesignTool';
+	wsPath += '/src/' + FilesDirectory;
 
 	if (!fs.existsSync(wsPath)){
 		fs.mkdirSync(wsPath);
@@ -178,47 +216,42 @@ export function RemoveAllFilesInFolder(jsonFiles: JSONfile[], path: String)
 }
 export function AddFile(path: String, file: JSONfile)
 {
+	if (file.name.includes("..\\") || file.name.includes("../"))
+		{
+			console.log('AddFile: ' + path + '/' + file.name + 'Error file name cannot include ..\\ or ../');
+			return;
+		}
 	fs.writeFile(path + '/' + file.name, file.contents, {flag:'wx'}, function(err:String) {
 		if (err) return console.log(err);
-		console.log('AddFile: ' + path);
+		console.log('AddFile: ' + path + '/' + file.name);
 	});
 }
 
-  var webSocketClient;
+  var webSocketClient:WebSocket;
   export function StartWebSocketServer()
   {
 	"use strict";
 
-	const serverPort = 3000,
-		http = require("http"),
-		express = require("express"),
-		app = express(),
+	const app = express(),
 		wsServer = http.createServer(app),
 		WebSocket = require("ws"),
-		websocketServer = new WebSocket.Server({ wsServer, port:3000 });
+		wss = new WebSocket.Server({ wsServer, port:webSocketPort });
 	
 	//when a websocket connection is established
-	websocketServer.on('connection', (_webSocketClient) => {
-		webSocketClient = _webSocketClient;
-		//send feedback to the incoming connection
-		_webSocketClient.send('{ "connection" : "ok"}');
-		
-		//when a message is received
-		_webSocketClient.on('message', (message) => {
-	
-			//for each websocket client
-			websocketServer
-			.clients
-			.forEach( client => {
-				//send the client the current message
-				client.send(`{ "message" : ${message} }`);
-			});
+	wss.on('connection', (wsc:WebSocket) => {
+		webSocketClient = wsc;
+		//connection is up, let's add a simple simple event
+		wsc.on('message', (message:String) => {
+			console.log("ws message:" + message);
+			wsc.send('Hello, you sent -> ' + message);
 		});
+		//send feedback to the incoming connection
+		wsc.send('Hi there, I am a WebSocket server');
 	});
 	
 	//start the web server
-	wsServer.listen(serverPort, () => {
-		console.log(`Websocket server started on port ` + serverPort);
+	wsServer.listen(webSocketPort, () => {
+		console.log(`Websocket server started on port ` + webSocketPort);
 	});
   }
 

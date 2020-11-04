@@ -21,7 +21,15 @@ POST request with data contents in json format:
     "command":""
 }
 ```
-
+GET request
+possible query strings:
+```
+http://localhost:8080?cmd=getFile&fileName=fileNameWithExt
+http://localhost:8080?cmd=compile
+http://localhost:8080?cmd=upload
+http://localhost:8080?cmd=ping
+```
+note. that i have prevented directory traversal by the filename
 
 ## Requirements
 none
