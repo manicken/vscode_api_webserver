@@ -1,7 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
+var webServer:Server;
+var wsServer:Server;
+
 const port = 8080;
 var url = require('url');
 var fs = require('fs');
@@ -15,6 +18,9 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "api-webserver" is now active!');
 	vscode.window.showInformationMessage('Congratulations, your extension "api-webserver" is now active!');
 	startServer();
+	StartWebSocketServer();
+	
+	//vscode.window.onDidChangeActiveTerminal((e) => {console.log(e.)})
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -23,6 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// The code you place here will be executed every time your command is executed
 
 		// Display a message box to the user
+		webSocketClient.send('Hello VS Code from API_WEBSERVER!');
 		vscode.window.showInformationMessage('Hello VS Code from API_WEBSERVER!');
 	});
 
@@ -31,9 +38,9 @@ export function activate(context: vscode.ExtensionContext) {
 export function startServer()
 {
 	//create a server object:
-	const server = createServer(serverReq);
+	webServer = createServer(serverReq);
 	
-	server.listen(8080); //the server object listens on port 8080
+	webServer.listen(8080); //the server object listens on port 8080
 }
 export function serverReq(req:IncomingMessage, res:ServerResponse)
 {
@@ -48,18 +55,57 @@ export function serverReq_GET(req:IncomingMessage, res:ServerResponse)
 	var q = url.parse(req.url, true).query;
 	
 	res.writeHead(200, {'Content-Type': 'text/html'});
-	if (q.cmd == "getJSON")
+	if (q.cmd == "getFile")
 	{
-		console.log("getJSON cmd:")
+		var fileName:String = q.param;
+		if (fileName == undefined || fileName == "")
+		{
+			res.write('getFile missing param="filename"');
+			res.end();
+			return;
+		}
+		// prevent directory traversal 
+		if (fileName.includes("..\\") || fileName.includes("../"))
+		{
+			res.write('Error file name cannot include ..\\ or ../');
+			res.end();
+			return;
+		}
+		//fileName = fileName.replace("..\\", ""); 
+		//fileName = fileName.replace("../", ""); // prevent directory traversal 
+		console.log("getFile cmd:" + q.param)
 		var path = GetDesignToolFolder();
 		if (path.length != 0) {
-			path += "/GUI_TOOL.json";
-			res.write(fs.readFileSync(path, {encoding:'utf8', flag:'r'}));
+			path += '/' + fileName;
+			try {
+			var contents:String = fs.readFileSync(path, {flag:'r'});
+			res.write(contents);
+			}
+			catch (err)
+			{
+				console.error(err);
+			}
 		}
+		res.end();
+		return;
 	}
-	else
-		res.write('OK'); //write a response to the client
-	
+	else if (q.cmd == "compile")
+	{
+		console.log("compile cmd:");
+		vscode.commands.executeCommand('platformio-ide.build');
+		res.write('OK');
+		res.end();
+		return;
+	}
+	else if (q.cmd == "upload")
+	{
+		console.log("upload cmd:");
+		vscode.commands.executeCommand('platformio-ide.upload');
+		res.write('OK');
+		res.end();
+		return;
+	}
+	res.write('unknown command' + req.url); //write a response to the client
 	res.end(); //end the response
 }
 export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
@@ -138,5 +184,45 @@ export function AddFile(path: String, file: JSONfile)
 	});
 }
 
+  var webSocketClient;
+  export function StartWebSocketServer()
+  {
+	"use strict";
+
+	const serverPort = 3000,
+		http = require("http"),
+		express = require("express"),
+		app = express(),
+		wsServer = http.createServer(app),
+		WebSocket = require("ws"),
+		websocketServer = new WebSocket.Server({ wsServer, port:3000 });
+	
+	//when a websocket connection is established
+	websocketServer.on('connection', (_webSocketClient) => {
+		webSocketClient = _webSocketClient;
+		//send feedback to the incoming connection
+		_webSocketClient.send('{ "connection" : "ok"}');
+		
+		//when a message is received
+		_webSocketClient.on('message', (message) => {
+	
+			//for each websocket client
+			websocketServer
+			.clients
+			.forEach( client => {
+				//send the client the current message
+				client.send(`{ "message" : ${message} }`);
+			});
+		});
+	});
+	
+	//start the web server
+	wsServer.listen(serverPort, () => {
+		console.log(`Websocket server started on port ` + serverPort);
+	});
+  }
+
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+	webServer.close();
+}
