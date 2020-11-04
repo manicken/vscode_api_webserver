@@ -72,7 +72,7 @@ export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
 	req.on('data', (chunk) => {chunks.push(chunk)});
 	req.on('end', () => {
 		var jsonString = Buffer.concat(chunks).toString();
-		//console.log('POST req data:\n' + jsonString);
+		console.log('POST req data:\n' + jsonString);
 		var jsonObj= JSON.parse(jsonString);
 		vscode.window.showInformationMessage('API webserver - set files');
 		
@@ -81,7 +81,7 @@ export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
 		RemoveAllFilesInFolder(jsonObj.files, wsPath);
 		for (var i = 0; i < jsonObj.files.length; i++)
 		{
-			AddFile(wsPath, jsonObj.files[i].name, jsonObj.files[i].cpp);
+			AddFile(wsPath, jsonObj.files[i]);
 		}
 	})
 }
@@ -100,7 +100,7 @@ export function GetDesignToolFolder():String
 export interface JSONfile
 {
 	name:String;
-	cpp:String
+	contents:String
 }
 export function NameExistsIn(name:String, jsonFiles: JSONfile[]):boolean
 {
@@ -130,9 +130,9 @@ export function RemoveAllFilesInFolder(jsonFiles: JSONfile[], path: String)
 	}
 
 }
-export function AddFile(path: String, name: String, contents: String)
+export function AddFile(path: String, file: JSONfile)
 {
-	fs.writeFile(path + '/' + name, contents, {flag:'wx'}, function(err:String) {
+	fs.writeFile(path + '/' + file.name, file.contents, {flag:'wx'}, function(err:String) {
 		if (err) return console.log(err);
 		console.log('AddFile: ' + path);
 	});

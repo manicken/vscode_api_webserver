@@ -1,6 +1,7 @@
 {
 	"name": "api-webserver",
 	"displayName": "API_WEBSERVER",
+	"publisher": "JannikSvensson",
 	"description": "starts a webserver to which POST and GET can be sent to control visual studio code, ie. when developing a external code editor/generator using a standard webbrowser",
 	"version": "0.0.1",
 	"engines": {
@@ -41,5 +42,9 @@
 		"mocha": "^8.1.3",
 		"typescript": "^4.0.2",
 		"vscode-test": "^1.4.0"
-	}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/manicken/vsc_api_webserver.git"
+	  }
 }
