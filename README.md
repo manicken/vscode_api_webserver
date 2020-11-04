@@ -7,18 +7,18 @@ This extension make it possible to take control of Visual Studio Code from a Web
 
 POST request with data contents in json format:
 
-{
-    "files":[
-        {
-            "name":"Main.h",
-            "contents":""
-        },
-        {
-            "name":"GUI_TOOL.json",
-            "contents":""
-        }
-    ],
-    "command":""
+{<br>
+    "files":[<br>
+        {<br>
+            "name":"Main.c",<br>
+            "contents":""<br>
+        },<br>
+        {<br>
+            "name":"Main.h",<br>
+            "contents":""<br>
+        }<br>
+    ],<br>
+    "command":""<br>
 }
 
 
