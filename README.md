@@ -34,7 +34,34 @@ note. that i have prevented directory traversal by the filename
 ## Requirements
 none
 ## Extension Settings
-none
+in webServerApiSettings.json in project root
+Contents example:
+```
+{
+    "webServerPort": 8080,
+    "webSocketPort": 3000,
+    "FilesDirectory": "DesignTool",
+    "useTerminalOutputAnsiStrip": true,
+    "useTerminalOutputToHtml": true
+}
+webServerPort: the port that the webserver listen to
+
+webSocketPort: the port that the websocketserver listen to
+
+FilesDirectory: this is the folder where the files will be put by the POST command
+                it's also the root folder of getFile
+
+useTerminalOutputAnsiStrip: when this is set the Ansi Style characters is stripped from the terminal capture data
+
+useTerminalOutputToHtml: converts < to &lt;
+                                  > to &gt;
+                                  \r\n \r \n  respective to <br>
+                                  "space char" to &nbsp;
+
+if both useTerminalOutputToHtml and useTerminalOutputAnsiStrip is set
+ then the html output will be stripped from the Ansi Style characters
+```		         
+
 ## Known Issues
 none
 ## Release Notes
@@ -42,6 +69,19 @@ none
 ### 1.0.0
 
 Initial release of API_Webserver
+
+### 1.0.1
+
+Add GET requests
+
+### 1.0.2
+
+Add Settings file
+
+### 1.0.3
+
+Add terminal capture and send to connected WebSocket client
+to use terminal capture use --enable-proposed-api JannikSvensson.api-webserver as VSCODE start parameter
 
 
 -----------------------------------------------------------------------------------------------------------

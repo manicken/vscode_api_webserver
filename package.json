@@ -1,9 +1,10 @@
 {
+	"enableProposedApi": true,
 	"name": "api-webserver",
 	"displayName": "API_WEBSERVER",
 	"publisher": "JannikSvensson",
 	"description": "starts a webserver to which POST and GET can be sent to control visual studio code, ie. when developing a external code editor/generator using a standard webbrowser",
-	"version": "0.0.1",
+	"version": "1.0.3",
 	"engines": {
 		"vscode": "^1.50.0"
 	},
@@ -11,14 +12,15 @@
 		"Other"
 	],
 	"activationEvents": [
-		"*"
+		"*",
+		"onCommand:terminalTest.onDidWriteTerminalData"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "api-webserver.helloWorld",
-				"title": "Hello World"
+				"command": "api-webserver.restart",
+				"title": "API-webserver restart"
 			}
 		]
 	},
@@ -40,15 +42,19 @@
 		"@typescript-eslint/eslint-plugin": "^4.1.1",
 		"@typescript-eslint/parser": "^4.1.1",
 		"eslint": "^7.9.0",
-		"express": "^4.17.1",
-		"glob": "^7.1.6",
-		"mocha": "^8.1.3",
 		"typescript": "^4.0.5",
-		"vscode-test": "^1.4.0",
-		"ws": "^4.1.0"
+		"glob": "^7.1.6",
+		"mocha": "^8.1.3"
 	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/manicken/vsc_api_webserver.git"
+	},
+	"dependencies": {
+		"ansi-to-html": "^0.6.14",
+		"express": "^4.17.1",
+		"strip-ansi": "^6.0.0",
+		"vscode-test": "^1.4.0",
+		"ws": "^4.1.0"
 	}
 }

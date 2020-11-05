@@ -1,11 +1,16 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+//import { IExtHostTerminalService } from './vs/workbench/api/common/extHostTerminalService';
 import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 
 import * as express from 'express';
 import * as http from 'http';
 import * as WebSocket from 'ws';
+
+var Convert = require('ansi-to-html');
+var convert = new Convert();
+const stripAnsi = require('strip-ansi');
 
 var webServer:Server;
 var wsServer:Server;
@@ -13,13 +18,76 @@ const SettingFileName = "webServerApiSettings.json";
 var webServerPort = 8080;
 var webSocketPort = 3000;
 var FilesDirectory = "DesignTool";
+var useTerminalOutputToHtml = true;
+var useTerminalOutputAnsiStrip = false;
+
 var url = require('url');
 var fs = require('fs');
+
+export function toHex(text:String){
+    var hex, i;
+
+    var result = "";
+    for (i=0; i<text.length; i++) {
+        hex = text.charCodeAt(i).toString(16);
+        result += (" 000"+hex).slice(-4);
+    }
+
+    return result
+}
+//#region Terminal data write event https://github.com/microsoft/vscode/issues/78502
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 	loadSettings();
+
+	try{
+	(<any>vscode.window).onDidWriteTerminalData((e: vscode.TerminalDataWriteEvent) => {
+		//vscode.window.showInformationMessage(`onDidWriteTerminalData listener attached, check the devtools console to see events`);
+		//console.log('onDidWriteData' + e.data);
+		if (e.terminal.name != "Task - Build") return;
+
+		if (webSocketClient != undefined)
+		{	
+			var convertedStr = e.data;
+			if (useTerminalOutputToHtml)
+			{
+				// because replace function don't "replace all"
+				// the usage is split(search).join(replace)
+				convertedStr = convertedStr.split("\x3c").join("&lt;");
+				convertedStr = convertedStr.split("\x3e").join("&gt;");
+				convertedStr = convertedStr.split("\r\n").join("<br>");
+				convertedStr = convertedStr.split("\r").join("<br>");
+				convertedStr = convertedStr.split("\n").join("<br>");
+				convertedStr = convertedStr.split("\x20").join("&nbsp;");
+				convertedStr = convertedStr.replace("n]0;", "<br>");
+				if (useTerminalOutputAnsiStrip)
+					convertedStr = stripAnsi(convertedStr);
+				else
+					convertedStr = convert.toHtml(convertedStr);
+			}
+			else if (useTerminalOutputAnsiStrip)
+			{
+				convertedStr = stripAnsi(convertedStr);
+			}
+			//else raw output
+			webSocketClient.send(convertedStr);
+		}
+	});
+	vscode.window.showInformationMessage('api-webserver: special thanks for using insiders edition with this extension');
+	}
+	catch (err)
+	{
+		vscode.window.showErrorMessage("error:" +err);
+		var term:vscode.Terminal = vscode.window.createTerminal("debugTest");
+		term.show(false);
+		term.sendText(err, true);
+		term.sendText("Helloo worlddsdf");
+		vscode.window.showInformationMessage(err);
+		vscode.window.showInformationMessage('api-webserver: Sorry onDidWriteTerminalData is not available in this version, use insiders version it you want to have the terminal output sent back');
+	}
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "api-webserver" is now active!');
@@ -30,15 +98,32 @@ export function activate(context: vscode.ExtensionContext) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('api-webserver.helloWorld', () => {
+	let disposable = vscode.commands.registerCommand('api-webserver.restart', () => {
 		// The code you place here will be executed every time your command is executed
-
+		loadSettings();
+		startServer();
+	    StartWebSocketServer();
 		// Display a message box to the user
-		webSocketClient.send('Hello VS Code from API_WEBSERVER!');
+		if (webSocketClient != undefined)
+			webSocketClient.send('Hello VS Code from API_WEBSERVER!');
 		vscode.window.showInformationMessage('Hello VS Code from API_WEBSERVER!');
 	});
 
 	context.subscriptions.push(disposable);
+}
+export function saveSettings(filePath:string)
+{
+	var cfg = {
+		webServerPort:webServerPort, 
+		webSocketPort:webSocketPort,
+		FilesDirectory:FilesDirectory,
+		useTerminalOutputAnsiStrip:useTerminalOutputAnsiStrip,
+		useTerminalOutputToHtml:useTerminalOutputToHtml
+	};
+	fs.writeFile(filePath, JSON.stringify(cfg, null, 4), {flag:'wx'}, function(err:String) {
+		if (err) return console.log(err);
+		console.log('saved standard config file: ' + filePath);
+	});
 }
 export function loadSettings()
 {
@@ -47,23 +132,19 @@ export function loadSettings()
 	var wsPath = folders[0].uri.fsPath; // gets the path of the first workspace folder
 	wsPath += "/" + SettingFileName;
 	if (!fs.existsSync(wsPath)){
-		var cfg = {
-			webServerPort:webServerPort, 
-			webSocketPort:webSocketPort,
-			FilesDirectory:FilesDirectory
-		};
-		fs.writeFile(wsPath, JSON.stringify(cfg, null, 4), {flag:'wx'}, function(err:String) {
-			if (err) return console.log(err);
-			console.log('saved standard config file: ' + wsPath);
-		});
+		saveSettings(wsPath);
 		return;
 	}
 	try { 
 		var contents = fs.readFileSync(wsPath, {flag:'r'});
 		var cfgIn = JSON.parse(contents);
-		webServerPort = cfgIn.webServerPort;
-		webSocketPort = cfgIn.webSocketPort;
-		FilesDirectory = cfgIn.FilesDirectory;
+		webServerPort = (cfgIn.webServerPort != undefined) ? cfgIn.webServerPort : webServerPort;
+		webSocketPort = (cfgIn.webSocketPort != undefined) ? cfgIn.webSocketPort : webSocketPort;
+		FilesDirectory = (cfgIn.FilesDirectory != undefined) ? cfgIn.FilesDirectory : FilesDirectory;
+		useTerminalOutputToHtml = (cfgIn.useTerminalOutputToHtml != undefined) ? cfgIn.useTerminalOutputToHtml : useTerminalOutputToHtml;
+		useTerminalOutputAnsiStrip = (cfgIn.useTerminalOutputAnsiStrip != undefined) ? cfgIn.useTerminalOutputAnsiStrip : useTerminalOutputAnsiStrip;
+		saveSettings(wsPath); // save back settings if there was anything added above
+		console.log("read current settings");
 	}
 	catch (err)	{console.error(err);}
 }
@@ -243,10 +324,10 @@ export function AddFile(path: String, file: JSONfile)
 		//connection is up, let's add a simple simple event
 		wsc.on('message', (message:String) => {
 			console.log("ws message:" + message);
-			wsc.send('Hello, you sent -> ' + message);
+			wsc.send('Hello, you sent -> ' + message + "<br>");
 		});
 		//send feedback to the incoming connection
-		wsc.send('Hi there, I am a WebSocket server');
+		wsc.send('Hi there, I am a WebSocket server<br>');
 	});
 	
 	//start the web server
@@ -259,3 +340,4 @@ export function AddFile(path: String, file: JSONfile)
 export function deactivate() {
 	webServer.close();
 }
+
