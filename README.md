@@ -31,6 +31,7 @@ http://localhost:8080?cmd=ping
 ```
 note. that i have prevented directory traversal by the filename
 
+
 ## Requirements
 none
 ## Extension Settings
@@ -62,6 +63,10 @@ if both useTerminalOutputToHtml and useTerminalOutputAnsiStrip is set
  then the html output will be stripped from the Ansi Style characters
 ```		         
 
+to apply the settings use the command:
+```
+API-webserver restart
+```
 ## Known Issues
 none
 ## Release Notes
