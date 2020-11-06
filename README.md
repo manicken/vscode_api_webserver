@@ -5,7 +5,7 @@ This extension make it possible to take control of Visual Studio Code from a Web
 
 ## Features
 
-POST request with data contents in json format:
+* POST request with data contents in json format:
 ```
 {
     "files":[
@@ -18,10 +18,16 @@ POST request with data contents in json format:
             "contents":""
         }
     ],
-    "command":""
+    "removeOtherFiles":true
 }
 ```
-GET request
+in above json:
+removeOtherFiles mean that when this is set to true
+ then files that is not present in the JSON is removed 
+ from the VSCODE project FilesDirectory (described in [Extension Settings](#extension-settings))
+ it should be set to false if only known files need to be replaced/added.
+
+* GET request
 possible query strings:
 ```
 http://localhost:8080?cmd=getFile&fileName=fileNameWithExt

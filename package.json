@@ -12,8 +12,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"*",
-		"onCommand:terminalTest.onDidWriteTerminalData"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {

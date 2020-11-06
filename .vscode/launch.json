@@ -11,7 +11,7 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--enable-proposed-api JannikSvensson.api-webserver",
+				"--enable-proposed-api JannikSvensson.api-webserver"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
@@ -24,7 +24,8 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+				"--enable-proposed-api JannikSvensson.api-webserver"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/test/**/*.js"

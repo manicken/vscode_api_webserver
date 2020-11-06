@@ -1,5 +1,0 @@
-{
-    "webServerPort": 8080,
-    "webSocketPort": 3000,
-    "FilesDirectory": "DesignTool"
-}

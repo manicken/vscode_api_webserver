@@ -18,6 +18,7 @@ const SettingFileName = "webServerApiSettings.json";
 var webServerPort = 8080;
 var webSocketPort = 3000;
 var FilesDirectory = "DesignTool";
+var useTerminalOutputCapture = true;
 var useTerminalOutputToHtml = true;
 var useTerminalOutputAnsiStrip = false;
 
@@ -40,6 +41,24 @@ export function toHex(text:String){
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	
+	// The command has been defined in the package.json file
+	// Now provide the implementation of the command with registerCommand
+	// The commandId parameter must match the command field in package.json
+	let disposable = vscode.commands.registerCommand('api-webserver.restart', () => {
+		// The code you place here will be executed every time your command is executed
+		StartExtension();		
+	});
+	StartExtension();
+	context.subscriptions.push(disposable);
+}
+// this method is called when your extension is deactivated
+export function deactivate() {
+	webServer.close();
+	
+}
+export function StartExtension()
+{
 	loadSettings();
 
 	try{
@@ -48,68 +67,31 @@ export function activate(context: vscode.ExtensionContext) {
 		//console.log('onDidWriteData' + e.data);
 		if (e.terminal.name != "Task - Build") return;
 
-		if (webSocketClient != undefined)
-		{	
-			var convertedStr = e.data;
-			if (useTerminalOutputToHtml)
-			{
-				// because replace function don't "replace all"
-				// the usage is split(search).join(replace)
-				convertedStr = convertedStr.split("\x3c").join("&lt;");
-				convertedStr = convertedStr.split("\x3e").join("&gt;");
-				convertedStr = convertedStr.split("\r\n").join("<br>");
-				convertedStr = convertedStr.split("\r").join("<br>");
-				convertedStr = convertedStr.split("\n").join("<br>");
-				convertedStr = convertedStr.split("\x20").join("&nbsp;");
-				convertedStr = convertedStr.replace("n]0;", "<br>");
-				if (useTerminalOutputAnsiStrip)
-					convertedStr = stripAnsi(convertedStr);
-				else
-					convertedStr = convert.toHtml(convertedStr);
-			}
-			else if (useTerminalOutputAnsiStrip)
-			{
-				convertedStr = stripAnsi(convertedStr);
-			}
-			//else raw output
-			webSocketClient.send(convertedStr);
-		}
+		if (webSocketClient == undefined) return;
+
+		if (useTerminalOutputCapture)
+			SendTerminalOutput(e.data);
 	});
-	vscode.window.showInformationMessage('api-webserver: special thanks for using insiders edition with this extension');
+	vscode.window.showInformationMessage('api-webserver: special thanks for using --enable-proposed-api JannikSvensson.api-webserver');
 	}
 	catch (err)
 	{
 		vscode.window.showErrorMessage("error:" +err);
-		var term:vscode.Terminal = vscode.window.createTerminal("debugTest");
-		term.show(false);
-		term.sendText(err, true);
-		term.sendText("Helloo worlddsdf");
 		vscode.window.showInformationMessage(err);
-		vscode.window.showInformationMessage('api-webserver: Sorry onDidWriteTerminalData is not available in this version, use insiders version it you want to have the terminal output sent back');
+		vscode.window.showInformationMessage('api-webserver: Sorry onDidWriteTerminalData is not available in this mode, start code with: code --enable-proposed-api JannikSvensson.api-webserver');
 	}
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "api-webserver" is now active!');
-	vscode.window.showInformationMessage('Congratulations, your extension "api-webserver" is now active!');
+	
 	startServer();
 	StartWebSocketServer();
-	
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('api-webserver.restart', () => {
-		// The code you place here will be executed every time your command is executed
-		loadSettings();
-		startServer();
-	    StartWebSocketServer();
-		// Display a message box to the user
-		if (webSocketClient != undefined)
-			webSocketClient.send('Hello VS Code from API_WEBSERVER!');
-		vscode.window.showInformationMessage('Hello VS Code from API_WEBSERVER!');
-	});
 
-	context.subscriptions.push(disposable);
+	// Display a message box to the user
+	if (webSocketClient != undefined)
+		webSocketClient.send('Hello VS Code from API_WEBSERVER!');
+	
+	vscode.window.showInformationMessage('Congratulations, your extension "api-webserver" is now active!');
 }
 export function saveSettings(filePath:string)
 {
@@ -117,6 +99,7 @@ export function saveSettings(filePath:string)
 		webServerPort:webServerPort, 
 		webSocketPort:webSocketPort,
 		FilesDirectory:FilesDirectory,
+		useTerminalOutputCapture:useTerminalOutputCapture,
 		useTerminalOutputAnsiStrip:useTerminalOutputAnsiStrip,
 		useTerminalOutputToHtml:useTerminalOutputToHtml
 	};
@@ -141,6 +124,7 @@ export function loadSettings()
 		webServerPort = (cfgIn.webServerPort != undefined) ? cfgIn.webServerPort : webServerPort;
 		webSocketPort = (cfgIn.webSocketPort != undefined) ? cfgIn.webSocketPort : webSocketPort;
 		FilesDirectory = (cfgIn.FilesDirectory != undefined) ? cfgIn.FilesDirectory : FilesDirectory;
+		useTerminalOutputCapture = (cfgIn.useTerminalOutputCapture != undefined) ? cfgIn.useTerminalOutputCapture: useTerminalOutputCapture;
 		useTerminalOutputToHtml = (cfgIn.useTerminalOutputToHtml != undefined) ? cfgIn.useTerminalOutputToHtml : useTerminalOutputToHtml;
 		useTerminalOutputAnsiStrip = (cfgIn.useTerminalOutputAnsiStrip != undefined) ? cfgIn.useTerminalOutputAnsiStrip : useTerminalOutputAnsiStrip;
 		saveSettings(wsPath); // save back settings if there was anything added above
@@ -237,13 +221,16 @@ export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
 	req.on('data', (chunk) => {chunks.push(chunk)});
 	req.on('end', () => {
 		var jsonString = Buffer.concat(chunks).toString();
-		console.log('POST req data:\n' + jsonString);
+		//console.log('POST req data:\n' + jsonString);
 		var jsonObj= JSON.parse(jsonString);
 		vscode.window.showInformationMessage('API webserver - set files');
 		
 		var wsPath = GetFilesFolder();
 		if (wsPath.length == 0) return;
-		RemoveAllFilesInFolder(jsonObj.files, wsPath);
+		
+		if ((jsonObj.removeOtherFiles != undefined) && (jsonObj.removeOtherFiles == true))
+			RemoveAllFilesInFolder(jsonObj.files, wsPath);
+
 		for (var i = 0; i < jsonObj.files.length; i++)
 		{
 			AddFile(wsPath, jsonObj.files[i]);
@@ -308,9 +295,9 @@ export function AddFile(path: String, file: JSONfile)
 	});
 }
 
-  var webSocketClient:WebSocket;
-  export function StartWebSocketServer()
-  {
+var webSocketClient:WebSocket;
+export function StartWebSocketServer()
+{
 	"use strict";
 
 	const app = express(),
@@ -334,10 +321,32 @@ export function AddFile(path: String, file: JSONfile)
 	wsServer.listen(webSocketPort, () => {
 		console.log(`Websocket server started on port ` + webSocketPort);
 	});
-  }
-
-// this method is called when your extension is deactivated
-export function deactivate() {
-	webServer.close();
 }
+export function SendTerminalOutput(data:String)
+{
+	var convertedStr = data;
+	if (useTerminalOutputToHtml)
+	{
+		// because replace function don't "replace all"
+		// the usage is split(search).join(replace)
+		convertedStr = convertedStr.split("\x3c").join("&lt;");
+		convertedStr = convertedStr.split("\x3e").join("&gt;");
+		convertedStr = convertedStr.split("\r\n").join("<br>");
+		convertedStr = convertedStr.split("\r").join("<br>");
+		convertedStr = convertedStr.split("\n").join("<br>");
+		convertedStr = convertedStr.split("\x20").join("&nbsp;");
+		convertedStr = convertedStr.replace("n]0;", "<br>");
+		if (useTerminalOutputAnsiStrip)
+			convertedStr = stripAnsi(convertedStr);
+		else
+			convertedStr = convert.toHtml(convertedStr);
+	}
+	else if (useTerminalOutputAnsiStrip)
+	{
+		convertedStr = stripAnsi(convertedStr);
+	}
+	//else raw output
+	webSocketClient.send(convertedStr);
+}
+
 
