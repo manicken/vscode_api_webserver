@@ -4,7 +4,7 @@
 	"displayName": "API_WEBSERVER",
 	"publisher": "JannikSvensson",
 	"description": "starts a webserver to which POST and GET can be sent to control visual studio code, ie. when developing a external code editor/generator using a standard webbrowser",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"engines": {
 		"vscode": "^1.50.0"
 	},

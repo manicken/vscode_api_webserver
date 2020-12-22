@@ -36,7 +36,8 @@ http://localhost:8080?cmd=upload
 http://localhost:8080?cmd=ping
 ```
 note. that i have prevented directory traversal by the filename
-
+so if you want to use the root src folder to store files in
+set the setting to "FilesDirectory": "",
 
 ## Requirements
 none
@@ -74,7 +75,19 @@ to apply the settings use the command:
 API-webserver restart
 ```
 ## Known Issues
-none
+to use the terminal capture
+you need to start VSCODE with the following parameter:
+--enable-proposed-api JannikSvensson.api-webserver
+
+in windows just right click on the vs-code shortcut select properties and put it after .exe" line
+in windows 10 if you have the shortcut on the start-menu first right click that select "more-open file location"
+then right click that and do the above.
+
+in both linux and mac the VSCODE needs to be started from the terminal 
+(if you don't go througt the complicated thing of creating a shell script)
+with:
+code --enable-proposed-api JannikSvensson.api-webserver
+
 ## Release Notes
 
 ### 1.0.0
@@ -94,6 +107,11 @@ Add Settings file
 Add terminal capture and send to connected WebSocket client
 to use terminal capture use --enable-proposed-api JannikSvensson.api-webserver as VSCODE start parameter
 
+### 1.0.4
+
+Add settings useTerminalOutputCapture, useTerminalOutputToHtml, useTerminalOutputAnsiStrip
+Add POST JSON data removeOtherFiles
+Fix File write flag so that it overwrites existing files
 
 -----------------------------------------------------------------------------------------------------------
 <!---

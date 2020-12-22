@@ -229,7 +229,10 @@ export function serverReq_POST(req:IncomingMessage, res:ServerResponse)
 		if (wsPath.length == 0) return;
 		
 		if ((jsonObj.removeOtherFiles != undefined) && (jsonObj.removeOtherFiles == true))
+		{
+			vscode.window.showInformationMessage("removing unused files!");
 			RemoveAllFilesInFolder(jsonObj.files, wsPath);
+		}
 
 		for (var i = 0; i < jsonObj.files.length; i++)
 		{
@@ -289,7 +292,7 @@ export function AddFile(path: String, file: JSONfile)
 			console.log('AddFile: ' + path + '/' + file.name + 'Error file name cannot include ..\\ or ../');
 			return;
 		}
-	fs.writeFile(path + '/' + file.name, file.contents, {flag:'wx'}, function(err:String) {
+	fs.writeFile(path + '/' + file.name, file.contents, {flag:'w'}, function(err:String) {
 		if (err) return console.log(err);
 		console.log('AddFile: ' + path + '/' + file.name);
 	});
