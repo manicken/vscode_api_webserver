@@ -83,10 +83,10 @@ in windows just right click on the vs-code shortcut select properties and put it
 in windows 10 if you have the shortcut on the start-menu first right click that select "more-open file location"
 then right click that and do the above.
 
-in both linux and mac the VSCODE needs to be started from the terminal 
-(if you don't go througt the complicated thing of creating a shell script)
-with:
-code --enable-proposed-api JannikSvensson.api-webserver
+in both linux and mac the VSCODE needs to be started from the terminal<br>
+(if you don't go througt the complicated thing of creating a shell script)<br>
+with:<br>
+code --enable-proposed-api JannikSvensson.api-webserver<br>
 
 ## Release Notes
 
