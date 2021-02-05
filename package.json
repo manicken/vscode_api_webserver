@@ -21,7 +21,25 @@
 				"command": "api-webserver.restart",
 				"title": "API-webserver restart"
 			}
-		]
+        ],
+        "viewsContainers": {
+			"activitybar": [
+				{
+					"id": "api-webserver-menu",
+					"title": "API Webserver ",
+                    "description":"icon by https://www.flaticon.com/authors/catkuro",
+					"icon": "media/database.svg"
+				}
+			]
+		},
+		"views": {
+			"api-webserver-menu": [
+				{
+					"id": "apiWebServerMenu",
+					"name": "Menu"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -40,10 +58,11 @@
 		"@types/ws": "^7.2.9",
 		"@typescript-eslint/eslint-plugin": "^4.1.1",
 		"@typescript-eslint/parser": "^4.1.1",
+		"electron-rebuild": "^2.3.4",
 		"eslint": "^7.9.0",
-		"typescript": "^4.0.5",
 		"glob": "^7.1.6",
-		"mocha": "^8.1.3"
+		"mocha": "^8.1.3",
+		"typescript": "^4.0.5"
 	},
 	"repository": {
 		"type": "git",
@@ -52,6 +71,8 @@
 	"dependencies": {
 		"ansi-to-html": "^0.6.14",
 		"express": "^4.17.1",
+		"midi": "^1.0.0",
+		"node-gyp": "^7.1.2",
 		"strip-ansi": "^6.0.0",
 		"vscode-test": "^1.4.0",
 		"ws": "^4.1.0"

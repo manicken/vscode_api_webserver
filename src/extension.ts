@@ -8,6 +8,12 @@ import * as express from 'express';
 import * as http from 'http';
 import * as WebSocket from 'ws';
 
+
+import {NewMenuItem, NewMenu} from './Menu';
+
+import { TestView } from './testView';
+
+
 var Convert = require('ansi-to-html');
 var convert = new Convert();
 const stripAnsi = require('strip-ansi');
@@ -25,6 +31,10 @@ var useTerminalOutputAnsiStrip = false;
 var url = require('url');
 var fs = require('fs');
 
+import * as path from 'path';
+
+//var midi = require('midi');
+
 export function toHex(text:String){
     var hex, i;
 
@@ -37,19 +47,19 @@ export function toHex(text:String){
     return result
 }
 //#region Terminal data write event https://github.com/microsoft/vscode/issues/78502
-
+var _context: vscode.ExtensionContext;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	
+	_context = context;
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	let disposable = vscode.commands.registerCommand('api-webserver.restart', () => {
 		// The code you place here will be executed every time your command is executed
-		StartExtension();		
+		StartExtension(context);		
 	});
-	StartExtension();
+	StartExtension(context);
 	context.subscriptions.push(disposable);
 }
 // this method is called when your extension is deactivated
@@ -57,11 +67,102 @@ export function deactivate() {
 	webServer.close();
 	
 }
-export function StartExtension()
+
+function getWebviewContent(catGifSrc:string) {
+    return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Board Manager</title>
+  </head>
+  <body>
+  <script>
+
+  </script>
+  <label for="boards" style="font-size:20px;">Board:</label>
+  <select style="font-size:20px;" name="boards" id="boards">
+    <option value="0">Teensy 3.0</option>
+    <option value="1">Teensy 3.6</option>
+    <option value="2">Teensy 4.0</option>
+    <option value="3">Teensy 4.1</option>
+  </select>
+  <img src="${catGifSrc}" alt="Girl in a jacket" width="500" height="600">
+  </body>
+  </html>`;
+  }
+
+  export function TreeItemSelected(label:String) {
+    vscode.window.showInformationMessage("TreeItemSelected " + label);
+
+    
+}
+var panel:vscode.WebviewPanel;
+var panelIsVisible = false;
+export function ShowBoardSettings() {
+    //vscode.window.showInformationMessage("show boards settings pressed");
+    // Create and show panel
+    
+    if (panelIsVisible == true) {
+        vscode.window.showInformationMessage("panel visible");
+        return;
+    }
+
+    panel = vscode.window.createWebviewPanel(
+        'boardSettings',
+        'Board Settings',
+        vscode.ViewColumn.One,
+        {}
+    );
+    
+    // Get path to resource on disk
+    const onDiskPath = vscode.Uri.file(
+        path.join(_context.extensionPath, 'resources', 'dark', 'check.svg')
+      );
+    // And get the special URI to use with the webview
+    const catGifSrc = panel.webview.asWebviewUri(onDiskPath);
+    
+    panel.onDidDispose(
+        () => {
+            panelIsVisible = false;
+        },
+        null,
+        _context.subscriptions
+      );
+    // And set its HTML content
+    panel.webview.html = getWebviewContent(catGifSrc);
+    
+    panel.webview.options = {enableCommandUris:true, enableScripts:true};
+    panelIsVisible = true;
+}
+
+export function Build() {
+    //vscode.window.showInformationMessage("build pressed");
+    vscode.commands.executeCommand('platformio-ide.build');
+}
+
+export function Upload() {
+    //vscode.window.showInformationMessage("upload pressed");
+    vscode.commands.executeCommand('platformio-ide.upload');
+}
+
+
+export function InitMenu()
+{
+    NewMenu('apiWebServerMenu', [
+        NewMenuItem("build", "Build", "Builds the current project", "check.svg", Build),
+        NewMenuItem("upload", "Upload", "Upload to the board", "arrow-right.svg", Upload),
+        NewMenuItem("boardSettings", "Board Settings", "Shows board settings", "adjustments.svg", ShowBoardSettings),
+    ]);
+}
+
+export function StartExtension(context: vscode.ExtensionContext)
 {
 	loadSettings();
 
-	try{
+	InitMenu();
+
+    try{
 	(<any>vscode.window).onDidWriteTerminalData((e: vscode.TerminalDataWriteEvent) => {
 		//vscode.window.showInformationMessage(`onDidWriteTerminalData listener attached, check the devtools console to see events`);
 		//console.log('onDidWriteData' + e.data);
@@ -81,9 +182,21 @@ export function StartExtension()
 		vscode.window.showInformationMessage('api-webserver: Sorry onDidWriteTerminalData is not available in this mode, start code with: code --enable-proposed-api JannikSvensson.api-webserver');
 	}
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	
+	/*try{
+		const input = new midi.Input();
+
+		// Count the available input ports.
+		vscode.window.showInformationMessage("input.getPortCount()" + input.getPortCount());
+
+		// Get the name of a specified input port.
+		vscode.window.showInformationMessage("input.getPortName(0)" + input.getPortName(0));
+	}
+	catch (err)
+	{
+		vscode.window.showErrorMessage("error:" +err);
+		vscode.window.showInformationMessage(err);
+		vscode.window.showInformationMessage('sorry the midi interface is not availabe');
+	}*/
 	startServer();
 	StartWebSocketServer();
 
