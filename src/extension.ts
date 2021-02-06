@@ -68,69 +68,72 @@ export function deactivate() {
 	
 }
 
-function getWebviewContent(catGifSrc:string) {
-    return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Board Manager</title>
-  </head>
-  <body>
-  <script>
+function getWebviewContent(rootDir:string) {
+    //return fs.readFileSync(_context.extensionPath + "/manicken.github.io/index.html", {flag:'r'});
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+    <title>Board Manager</title>
 
-  </script>
-  <label for="boards" style="font-size:20px;">Board:</label>
-  <select style="font-size:20px;" name="boards" id="boards">
-    <option value="0">Teensy 3.0</option>
-    <option value="1">Teensy 3.6</option>
-    <option value="2">Teensy 4.0</option>
-    <option value="3">Teensy 4.1</option>
-  </select>
-  <img src="${catGifSrc}" alt="Girl in a jacket" width="500" height="600">
-  </body>
-  </html>`;
-  }
+    <link href="${rootDir}/BoardSettingsEditor/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="${rootDir}/BoardSettingsEditor/jquery/css/smoothness/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" media="screen">
+    <link rel="stylesheet" type="text/css" href="${rootDir}/BoardSettingsEditor/font-awesome/css/font-awesome.min.css"/>
 
-  export function TreeItemSelected(label:String) {
-    vscode.window.showInformationMessage("TreeItemSelected " + label);
-
+    <link rel="stylesheet" href="${rootDir}/BoardSettingsEditor/style.css">
+    </head>
+    <body style="padding-left:0px">
+    <script src="${rootDir}/BoardSettingsEditor/jquery/js/jquery-1.9.1.js"></script>
+    <script src="${rootDir}/BoardSettingsEditor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="${rootDir}/BoardSettingsEditor/jquery/js/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="${rootDir}/BoardSettingsEditor/jquery/js/jquery.ui.touch-punch.min.js"></script>
+    <script src="${rootDir}/BoardSettingsEditor/main.js"></script>
+    <script src="${rootDir}/BoardSettingsEditor/settings-editor.js"></script>´´
+ 
+    <div id="leftPanel">
     
+    </div>
+
+    <div id="rightPanel">
+    <textarea type="text" id="outputPreview" name="outputPreview" style="width: 95%; height: 95%"></textarea> 
+    </div>
+
+
+    </body>
+    </html>`;
 }
+
 var panel:vscode.WebviewPanel;
 var panelIsVisible = false;
 export function ShowBoardSettings() {
-    //vscode.window.showInformationMessage("show boards settings pressed");
-    // Create and show panel
-    
+
     if (panelIsVisible == true) {
         vscode.window.showInformationMessage("panel visible");
         return;
     }
-
+    // Create and show panel
     panel = vscode.window.createWebviewPanel(
         'boardSettings',
         'Board Settings',
         vscode.ViewColumn.One,
         {}
     );
-    
-    // Get path to resource on disk
-    const onDiskPath = vscode.Uri.file(
-        path.join(_context.extensionPath, 'resources', 'dark', 'check.svg')
-      );
-    // And get the special URI to use with the webview
-    const catGifSrc = panel.webview.asWebviewUri(onDiskPath);
-    
+
+    const resRootdir = panel.webview.asWebviewUri(vscode.Uri.file(_context.extensionPath)).toString();
+
     panel.onDidDispose(
         () => {
             panelIsVisible = false;
         },
         null,
         _context.subscriptions
-      );
+    );
+    console.warn(resRootdir);
+    
     // And set its HTML content
-    panel.webview.html = getWebviewContent(catGifSrc);
+    panel.webview.html = getWebviewContent(resRootdir);
     
     panel.webview.options = {enableCommandUris:true, enableScripts:true};
     panelIsVisible = true;
@@ -161,7 +164,7 @@ export function StartExtension(context: vscode.ExtensionContext)
 	loadSettings();
 
 	InitMenu();
-
+    ShowBoardSettings(); // development
     try{
 	(<any>vscode.window).onDidWriteTerminalData((e: vscode.TerminalDataWriteEvent) => {
 		//vscode.window.showInformationMessage(`onDidWriteTerminalData listener attached, check the devtools console to see events`);

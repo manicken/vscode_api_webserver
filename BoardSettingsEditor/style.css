@@ -1,0 +1,188 @@
+/**
+ * Copyright 2013 IBM Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+body {
+    font: 13px "Helvetica" !important;
+    padding-top: 0px;
+    background: url("img/pw_maze_white.png");
+}
+
+#leftPanel {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 0; width: 200px;
+}
+#rightPanel {
+    position: absolute;
+    top: 7px; bottom: 0;
+    left: 200px; right: 0;
+}
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
+.right {
+    display: flex;
+    justify-content: right;
+    align-items: right;
+    
+}
+
+.jscolor {
+    width: 70px;
+}
+input.jscolor {
+    border: 1px solid #333;
+}
+.settings-item {
+    background-color: #fff;
+    border: 1px solid #aaa;
+    /*border-bottom: 1px solid #aaa;*/
+    padding: 2px;
+    padding-bottom: 6px;
+    margin: 6px;
+}
+.settings-item-textwbtn {
+    padding: 5px;
+}
+.settings-item-applyBtn {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin: 0px;
+    margin-left: 3px;
+}
+.settings-item-multiline-btn {
+    text-align: right;
+    padding: 3px;
+}
+.settings-item-applyBtn2 {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin: 0px;
+    border: 0px;
+}
+    
+label.settings-item-label {
+    font-size: 16px;
+    margin: 3px;
+    text-align: center;
+    font-weight: bold;
+}
+input.settings-item-textInput {
+    height: 12px;
+    margin: 3px;
+}
+.settings-item-multilinetextInput {
+    margin: 0px;
+    padding: 0px;
+    
+}
+.settings-item-combobox {
+    margin: 0px;
+    height: 30px;
+}
+.settings-category {
+    border: 1px solid #999;
+    border-radius: 3px;
+    margin-bottom: 7px;
+    margin-top: 7px;
+    margin-left: 7px;
+    margin-right: 7px;
+}
+.settings-content {
+    background: #fff;
+    border-top: 1px solid #aaa;
+    /*padding-top: 3px;*/
+    /*padding-bottom: 3px;*/
+    /*width: 90%;*/
+}
+.settings-header {
+    font-weight: bold;
+    background: #f1f1f1;
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: center;
+    padding: 3px;
+    height: 21px;
+}
+
+.settings-category div .settings-menu {
+    position: relative;
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    top:2px;
+    left:2px
+}
+
+.settings-header i.icon-chevron-down {
+    float: right;
+    -webkit-transition: all 0.2s ease-in-out;
+    -moz-transition: all 0.2s ease-in-out;
+    -o-transition: all 0.2s ease-in-out;
+    -webkit-transform: rotate(-90deg);
+    -moz-transform: rotate(-90deg);
+    -o-transform: rotate(-90deg);
+}
+.settings-header i.expanded {
+    -webkit-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+}
+
+.pull-right {
+    margin-left: 20px;
+}
+    
+.notification {
+    position: absolute;
+}
+#notifications {
+    z-index: 10000;
+    width: 500px;
+    margin-left: -250px;
+    left: 55%;
+    position: absolute;
+    top: 1px;
+}
+#notifications .alert {
+    box-shadow: 0 0 1px 1px;
+    margin-bottom: 5px;
+}
+
+.setting-row {
+    clear: both;
+    margin-bottom: 7px;
+}
+.setting-row label {
+    display: block;
+    width: 100px;
+}
+    
+.popover{
+    max-width: 100%; /* Max Width of the popover (depending on the container!) */
+}
+
+.popover-title { display: none; }
+
+    
